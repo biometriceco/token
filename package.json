@@ -1,75 +1,90 @@
 {
-  "name": "@ton-defi.org/jetton-deployer-contracts",
-  "description": "Javascript library for deploying Jettons on the TON blockchain",
-  "version": "0.0.2",
-  "license": "MIT",
-  "author": "ton-defi.org",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/ton-defi-org/jetton-deployer-contracts.git"
-  },
-  "bugs": {
-    "url": "https://github.com/ton-defi-org/jetton-deployer-contracts/issues"
-  },
-  "homepage": "https://github.com/ton-defi-org/jetton-deployer-contracts#readme",
-  "scripts": {
-    "prettier": "npx prettier --write '{test,contracts,build}/**/*.{ts,js,json}'",
-    "test": "mocha  --exit test/**/*.spec.ts",
-    "test:coverage": "nyc mocha --exit test/**/*.spec.ts",
-    "test:watch": "mocha --watch --watch-files test/**/*.ts,lib/**/*.ts,contracts/**/*.ts test/**/*.spec.ts",
-    "build": "ts-node ./build/_build.ts",
-    "deploy": "ts-node ./build/_deploy.ts",
-    "deploy:testnet": "ts-node ./build/_deploy.ts",
-    "postinstall": "ts-node ./build/_setup.ts"
-  },
-  "devDependencies": {
-    "@swc/core": "^1.2.177",
-    "@types/bn.js": "^5.1.0",
-    "@types/chai": "^4.3.0",
-    "@types/chai-as-promised": "^7.1.5",
-    "@types/mocha": "^9.1.1",
-    "@types/node": "^17.0.41",
-    "@types/semver": "^7.3.9",
-    "@typescript-eslint/eslint-plugin": "^5.27.0",
-    "@typescript-eslint/parser": "^5.27.0",
-    "@vercel/ncc": "^0.34.0",
-    "chai": "^4.3.4",
-    "chai-as-promised": "^7.1.1",
-    "chai-bn": "^0.3.1",
-    "eslint": "^8.16.0",
-    "fast-glob": "^3.2.11",
-    "mocha": "^10.0.0",
-    "nyc": "^15.1.0",
-    "prando": "^6.0.1",
-    "prettier": "2.6.2",
-    "sinon": "^14.0.0",
-    "sinon-chai": "^3.7.0",
-    "ton-contract-executor": "^0.5.0",
-    "ts-node": "^10.4.0",
-    "ts-sinon": "^2.0.2",
-    "typescript": "^4.5.4",
-    "axios": "0.25.0"
-  },
-  "prettier": {
-    "printWidth": 100
-  },
-  "mocha": {
-    "require": [
-      "chai",
-      "ts-node/register"
-    ],
-    "timeout": 20000
-  },
-  "engines": {
-    "node": ">=16.0.0"
-  },
-  "dependencies": {
-    "@aws-crypto/sha256-js": "^2.0.1",
-    "axios-request-throttle": "^1.0.0",
-    "dotenv": "^16.0.0",
-    "semver": "^7.3.7",
-    "ton": "^11.16.0",
-    "ton-contracts": "^3.1.0",
-    "ton-crypto": "^3.1.0"
-  }
+      "name": "watchpack-fullstack",
+        "version": "1.0.0",
+          "description": "Full-stack version of watchpack with enhanced capabilities",
+            "main": "./lib/watchpack.js",
+              "type": "module",
+                "scripts": {
+                    "start": "node server/index.js",
+                        "dev": "concurrently \"npm run server\" \"npm run client\"",
+                            "server": "nodemon server/index.js",
+                                "client": "vite",
+                                    "build": "npm run build:server && npm run build:client",
+                                        "build:server": "tsc -p server/tsconfig.json",
+                                            "build:client": "vite build",
+                                                "test": "mocha",
+                                                    "test:coverage": "istanbul cover node_modules/mocha/bin/_mocha",
+                                                        "lint": "eslint .",
+                                                            "format": "prettier --write .",
+                                                                "prettier-files": "prettier \"lib/**.*\" \"test/**/*.js\" --write"
+                                                                  },
+                                                                    "repository": {
+                                                                        "type": "git",
+                                                                            "url": "git+https://github.com/yourusername/watchpack-fullstack.git"
+                                                                              },
+                                                                                "keywords": ["fullstack", "watchpack", "monitoring"],
+                                                                                  "author": "Your Name",
+                                                                                    "license": "MIT",
+                                                                                      "bugs": {
+                                                                                          "url": "https://github.com/yourusername/watchpack-fullstack/issues"
+                                                                                            },
+                                                                                              "homepage": "https://github.com/yourusername/watchpack-fullstack#readme",
+                                                                                                "dependencies": {
+                                                                                                    // Core watchpack dependencies
+                                                                                                        "glob-to-regexp": "^0.4.1",
+                                                                                                            "graceful-fs": "^4.1.2",
+                                                                                                                
+                                                                                                                    // Backend dependencies
+                                                                                                                        "express": "^4.18.2",
+                                                                                                                            "cors": "^2.8.5",
+                                                                                                                                "helmet": "^7.1.0",
+                                                                                                                                    "compression": "^1.7.4",
+                                                                                                                                        "dotenv": "^16.3.1",
+                                                                                                                                            
+                                                                                                                                                // Frontend dependencies
+                                                                                                                                                    "react": "^18.2.0",
+                                                                                                                                                        "react-dom": "^18.2.0",
+                                                                                                                                                            "@tanstack/react-query": "^4.36.1",
+                                                                                                                                                                "axios": "^1.6.2"
+                                                                                                                                                                  },
+                                                                                                                                                                    "devDependencies": {
+                                                                                                                                                                        // Existing dev dependencies
+                                                                                                                                                                            "coveralls": "^3.0.0",
+                                                                                                                                                                                "eslint": "^8.56.0",
+                                                                                                                                                                                    "eslint-config-prettier": "^9.1.0",
+                                                                                                                                                                                        "eslint-plugin-prettier": "^5.1.2",
+                                                                                                                                                                                            "istanbul": "^0.4.3",
+                                                                                                                                                                                                "mocha": "^10.2.0",
+                                                                                                                                                                                                    "prettier": "^3.2.4",
+                                                                                                                                                                                                        "rimraf": "^5.0.5",
+                                                                                                                                                                                                            "should": "^13.2.3",
+                                                                                                                                                                                                                "write-file-atomic": "^5.0.1",
+                                                                                                                                                                                                                    
+                                                                                                                                                                                                                        // Additional dev dependencies for fullstack
+                                                                                                                                                                                                                            "typescript": "^5.3.3",
+                                                                                                                                                                                                                                "@types/node": "^20.11.19",
+                                                                                                                                                                                                                                    "@types/express": "^4.17.21",
+                                                                                                                                                                                                                                        "vite": "^5.1.0",
+                                                                                                                                                                                                                                            "@vitejs/plugin-react": "^4.2.1",
+                                                                                                                                                                                                                                                "concurrently": "^8.2.2",
+                                                                                                                                                                                                                                                    "nodemon": "^3.0.2"
+                                                                                                                                                                                                                                                      },
+                                                                                                                                                                                                                                                        "engines": {
+                                                                                                                                                                                                                                                            "node": ">=18.0.0",
+                                                                                                                                                                                                                                                                "npm": ">=9.0.0"
+                                                                                                                                                                                                                                                                  },
+                                                                                                                                                                                                                                                                    "browserslist": {
+                                                                                                                                                                                                                                                                        "production": [
+                                                                                                                                                                                                                                                                              ">0.2%",
+                                                                                                                                                                                                                                                                                    "not dead",
+                                                                                                                                                                                                                                                                                          "not op_mini all"
+                                                                                                                                                                                                                                                                                              ],
+                                                                                                                                                                                                                                                                                                  "development": [
+                                                                                                                                                                                                                                                                                                        "last 1 chrome version",
+                                                                                                                                                                                                                                                                                                              "last 1 firefox version",
+                                                                                                                                                                                                                                                                                                                    "last 1 safari version"
+                                                                                                                                                                                                                                                                                                                        ]
+                                                                                                                                                                                                                                                                                                                          }
+                                                                                                                                                                                                                                                                                                                          }
+                                                                                                                                                                                                                                                                                                                          
 }

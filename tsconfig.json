@@ -1,21 +1,49 @@
 {
-  "compilerOptions": {
-    "jsx": "react",
-    "target": "es2015",
-    "module": "commonjs",
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "strict": true,
-    "skipLibCheck": true,
-    "rootDir": "",
-    "outDir": "dist",
-    "resolveJsonModule": true,
-    "declaration": true
-  },
-  // "include": ["lib"],
-  "exclude": ["node_modules", "dist", "tonwallets"],
-  "ts-node": {
-    "transpileOnly": true,
-    "transpiler": "ts-node/transpilers/swc"
-  }
+    "compilerOptions": {
+        "target": "es2020",  // استفاده از ES2020 به جای ES5
+            "module": "ESNext",  // استفاده از ماژول ESNext
+                "moduleResolution": "node",
+                    "strict": true,
+                        "esModuleInterop": true,
+                            "skipLibCheck": true,
+                                "forceConsistentCasingInFileNames": true,
+                                    "outDir": "./dist/",
+                                        "rootDir": "src",
+                                            "baseUrl": ".",
+                                                "paths": {
+                                                      "@/*": ["src/*"]
+                                                          },
+                                                              "types": ["node", "jest"],
+                                                                  "lib": ["es2020", "dom"],
+                                                                      "allowJs": true,
+                                                                          "checkJs": true,
+                                                                              "noImplicitAny": true,
+                                                                                  "strictNullChecks": true,
+                                                                                      "strictFunctionTypes": true,
+                                                                                          "strictPropertyInitialization": true,
+                                                                                              "noUnusedLocals": true,
+                                                                                                  "noUnusedParameters": true,
+                                                                                                      "noImplicitReturns": true,
+                                                                                                          "noFallthroughCasesInSwitch": true,
+                                                                                                              "allowSyntheticDefaultImports": true,
+                                                                                                                  "resolveJsonModule": true,
+                                                                                                                      "isolatedModules": true,
+                                                                                                                          "sourceMap": true,
+                                                                                                                              "declaration": true,
+                                                                                                                                  "emitDecoratorMetadata": true,
+                                                                                                                                      "experimentalDecorators": true,
+                                                                                                                                          "incremental": true,
+                                                                                                                                              "composite": true
+                                                                                                                                                },
+                                                                                                                                                  "include": [
+                                                                                                                                                      "./src/**/*"
+                                                                                                                                                        ],
+                                                                                                                                                          "exclude": [
+                                                                                                                                                              "node_modules",
+                                                                                                                                                                  "dist",
+                                                                                                                                                                      "**/*.spec.ts",
+                                                                                                                                                                          "**/*.test.ts"
+                                                                                                                                                                            ]
+                                                                                                                                                                            }
+                                                                                                                                                                            
 }

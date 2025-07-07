@@ -40,7 +40,7 @@ describe("Jetton", () => {
     const dataCell = jettonMinterInitData(OWNER_ADDRESS, {
       name: "MY_JETTON",
       symbol: "MJT",
-      description: "My Long Description".repeat(100)
+      description: "My Long Description".repeat(100),
     });
     minterContract = (await JettonMinter.create(JETTON_MINTER_CODE, dataCell)) as JettonMinter; // TODO: 🤮;
   });
