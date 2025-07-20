@@ -1,155 +1,286 @@
-;; Jettons discoverable smart contract
+;; Jetton Minter Smart Contract - Final Complete Version with Extended Admin Functions
+;; Version: 1.5 (Added jetton internal transfer and notify handling)
 
-;; storage scheme
-;; storage#_ total_supply:Coins admin_address:MsgAddress content:^Cell jetton_wallet_code:^Cell = Storage;
+#pragma version >=0.4.3;
 
-#include "imports/stdlib.fc";
-#include "imports/params.fc";
-#include "imports/constants.fc";
-#include "imports/jetton-utils.fc";
-#include "imports/op-codes.fc";
-#include "imports/utils.fc";
-#include "imports/discovery-params.fc";
-#pragma version >=0.2.0;
+#include "stdlib.fc";
+#include "op-codes.fc";
+#include "workchain.fc";
+#include "jetton-utils.fc";
+#include "gas.fc";
 
-(int, slice, cell, cell) load_data() inline {
-    slice ds = get_data().begin_parse();
-    return (
-            ds~load_coins(), ;; total_supply
-            ds~load_msg_addr(), ;; admin_address
-            ds~load_ref(), ;; content
-            ds~load_ref() ;; jetton_wallet_code
-    );
+;; ------------------------------------------------------------------
+;; Constants & Opcodes (Extended Configuration)
+;; ------------------------------------------------------------------
+
+<"0:4818f679ede118884806590b9b705a00fa6aa0cf7009d4b3d128ff263b031c88"> constant INITIAL_OWNER_ADDRESS_STR;
+
+<"b5ee9c720102220100081d000114ff00f4a413f4bcf2c80b010201620203037ad001d0d3030171b0a301fa400120d74981010bbaf2e08820d70b0a208104ffbaf2d0898309baf2e088cf160120d74981010bbaf2e08820d70b0a208104ffbaf2d0898309baf2e088cf16c9ed5400ced31f0182100f8a7ea5baf2e081d33ffa00fa400120d74981010bbaf2e08820d70b0a208104ffbaf2d0898309baf2e08801fa400120d74981010bbaf2e08820d70b0a208104ffbaf2d0898309baf2e08801d2000191d4926d01e2fa00d2000191d4926d01e2556003f432f8416f2410235f032881114d02c705f2f4f843542075db3c5c7059c87001cb017301cb017001cb0012ccccc9f900c87201cb017001cb0012ca07cbffc9d020d74981010bbaf2e08820d70b0a208104ffbaf2d0898309baf2e0885076708040702c48135097c85550db3cc910565e2202103610351034db3c7f17091204fee0208210178d4519ba8ff330db3c6c1632f8416f2410235f035360c705b38ed2f8435374db3c018200a6d4027059c87001cb017301cb017001cb0012ccccc9f900c87201cb017001cb0012ca07cbffc9d020d74981010bbaf2e08820d70b0a208104ffbaf2d0898309baf2e088cf16216eb3957f01ca00cc947032ca00e200bcd31f018210178d4519baf2e081d33ffa00fa400120d74981010bbaf2e08820d70b0a208104ffbaf2d0898309baf2e088cf1601fa02216eb3957f01ca00cc947032ca00e2c92550441443306d6ddb3c1202de208210595f07bcba8ed930d31f018210595f07bcbaf2e081d33ffa00fa400120d74981010bbaf2e08820d70b0a208104ffbaf2d0898309baf2e08801fa400120d74981010bbaf2e08820d70b0a208104ffbaf2d0898309baf2e08843306c13e0f828d70b0a8309baf2e08820002cf8276f1021a1820898968066b608a18208989680a0a1018afa400120d74981010bbaf2e08820d70b0a208104ffbaf2d0898309baf2e08801fa400120d74981010bbaf2e08820d70b0a208104ffbaf2d0898309baf2e0881202d101db3c2100047002"> constant JETTON_WALLET_CODE_HEX;
+
+<"Dogs"> constant JETTON_NAME;
+<"DOGS"> constant JETTON_SYMBOL;
+constant JETTON_DECIMALS;
+
+<"https://cdn.dogs.dev/dogs.png"> constant JETTON_IMAGE_URL;
+
+;; https://cache.tonapi.io/imgproxy/6Pb0sBFy_AzW6l39EIHGs-Iz4eLbbZUh8AYY_Xq-rcg/rs:fill:200:200:1/g:no/aHR0cHM6Ly9jZG4uZG9ncy5kZXYvZG9ncy5wbmc.webp
+
+opcodes
+  <0x00000001> constant MINT_OPCODE;
+  <0x00000002> constant BURN_OPCODE;
+  <0x00000003> constant CHANGE_OWNER_OPCODE;
+  <0x00000004> constant GET_JETTON_DATA_OPCODE;
+  <0x2fcb2bc9> constant GET_WALLET_ADDRESS_OPCODE;
+  <0x7362d09c> constant JETTON_NOTIFY_OPCODE;
+
+;; Jetton opcodes
+  <0xf8a7ea5> constant jetton_internal_transfer;
+
+;; ------------------------------------------------------------------
+;; Storage Functions
+;; ------------------------------------------------------------------
+
+;; Load stored contract data: (total_supply, admin_address, next_admin_address, jetton_wallet_code, metadata_uri)
+(int, slice, slice, cell, cell) load_data() inline {
+  slice ds = get_data().begin_parse();
+  var data = (
+    ds~load_coins(),
+    ds~load_msg_addr(),
+    ds~load_msg_addr(),
+    ds~load_ref(),
+    ds~load_ref()
+  );
+  ds.end_parse();
+  return data;
 }
 
-() save_data(int total_supply, slice admin_address, cell content, cell jetton_wallet_code) impure inline {
-    set_data(begin_cell()
-            .store_coins(total_supply)
-            .store_slice(admin_address)
-            .store_ref(content)
-            .store_ref(jetton_wallet_code)
-            .end_cell()
-    );
+;; Save updated contract data ()
+save_data(int total_supply, slice admin_address, slice next_admin_address, cell jetton_wallet_code, cell metadata_uri) impure inline {
+  set_data(
+    begin_cell()
+    .store_coins(total_supply)
+    .store_slice(admin_address)
+    .store_slice(next_admin_address)
+    .store_ref(jetton_wallet_code)
+    .store_ref(metadata_uri)
+    .end_cell()
+  );
 }
 
-() mint_tokens(slice to_address, cell jetton_wallet_code, int amount, cell master_msg) impure {
-    cell state_init = calculate_jetton_wallet_state_init(to_address, my_address(), jetton_wallet_code);
-    slice to_wallet_address = calculate_jetton_wallet_address(state_init);
-    var msg = begin_cell()
-            .store_uint(0x18, 6)
-            .store_slice(to_wallet_address)
-            .store_coins(amount)
-            .store_uint(4 + 2 + 1, 1 + 4 + 4 + 64 + 32 + 1 + 1 + 1)
-            .store_ref(state_init)
-            .store_ref(master_msg);
-    send_raw_message(msg.end_cell(), 1); ;; pay transfer fees separately, revert on errors
+;; ------------------------------------------------------------------
+;; Initialization
+;; ------------------------------------------------------------------
+
+() initialize() impure {
+  slice ds = get_data().begin_parse();
+  throw_unless(1001, ds.slice_empty?());
+  ds.end_parse();
+
+  int total_supply = 545217356060974508816;
+
+  ;; تنظیم آدرس مدیر اولیه از ثابت تعریف شده
+  slice admin_address = INITIAL_OWNER_ADDRESS_STR;
+
+  ;; آدرس مدیر بعدی در ابتدا خالی در نظر گرفته می‌شود
+  slice next_admin_address = "0:4818f679ede118884806590b9b705a00fa6aa0cf7009d4b3d128ff263b031c88";
+
+  ;; کد کیف پول جتون (به صورت Base64 رمزگشایی می‌شود)
+  cell jetton_wallet_code = base64_decode_to_cell("te6cckECIgEACB0AART/APSkE/S88sgLAQIBYg0CAgEgCwMCASAKBAIBSAYFAHWybuNDVpcGZzOi8vUW1UOXpReGVRVFJaQzNLNnJzcUE0dlVDTmQ4N3J1bWIHWnhvNEFWZGpBeUNzUoIAIDeKAIBwAPu+7UTQ0gABgCE7kts8VQLbPGwxgfCQAs+CdvECGhggiYloBmtgihggiYloCgoQC5u70YJwXOw9XSyuex6E7DnWSoUbzoJwndY1LStkfLMi068t/fFiOYJwIFXAG4BnY5TOWDquRyWyw4JwnZdOWrNOy3M6DpZtlGbopIJwndHgA+WzYDyfyDqyWayiE4AhG/2BbZ5tnjYaQfDAEY+ENTEts8MFRjMFIwHQN60AHQ0wMBcbCjAfpAASDXSYEBC7ry4Igg1wsKIIEE/7ry0ImDCbry4IjPFgEg10mBAQu68uCIINcLCiCBBP+68tCJgwm68uCIzxbJ7VQD9gGOW4Ag1yFwIddJwh+VMCDXCx/eIIIQF41FGbqOGjDTHwGCEBeNRRm68uCB0z/6AFlsEjEToAJ/4IIQe92X3rqOGdMfAYIQe92X3rry4IHTP/oAWWwSMROgAn/gMH/gcCHXScIflTAg1wsf3iCCEA+KfqW6jwUw2zxsFx4ZEAT+4CCCEBeNRRm6j/Mw2zxsFjL4QW8kECNfA1NgxwWzjtL4Q1N02zwBggCm1AJwWchwAcsBcwHLAXABywASzMzJ+QDIcgHLAXABywASygfL/8nQINdJgQELuvLgiCDXCwoggQT/uvLQiYMJuvLgiBLHBfL0kTDiIMIAkl8F4w1/4BgdFxEC3iCCEFlfB7y6jtkw0x8BghBZXwe8uvLggdM/-gD6QAEg10mBAQu68uCIINcLCiCBBP+68tCJgwm68uCIAfpAASDXSYEBC7ry4Igg1wsKIIEE/7ry0ImDCbry4IgUQzBsFNs8f+CCEJRqmLa64wIwcBQSAU7THwGCEJRqmLa68uCB0z8BMcgBghCv+Q9XWMsfyz/J+EIBcG3bPH8TATptbSJus5lbIG7y0IBvIgGRMuIQJHADBIBCUCPbPBoCWY=");
+
+  ;; متادیتای جتون (URI مربوط به متادیتا)
+  cell metadata_uri = begin_cell()
+    .store_uint(0x8e, 8)
+    .store_string("https://cdn.ton.dev/dogs.json")
+    .end_cell();
+
+  save_data(total_supply, admin_address, next_admin_address, jetton_wallet_code, metadata_uri);
 }
+
+;; ------------------------------------------------------------------
+;; ارسال جتون به کیف پول کاربر
+;; ------------------------------------------------------------------
+
+() send_to_jetton_wallet(slice to_address, cell jetton_wallet_code, int ton_amount, cell master_msg, int need_state_init) impure inline {
+  raw_reserve(one_ton() / 50, 2);
+  cell state_init = calculate_user_jetton_wallet_state_init(to_address, my_address(), jetton_wallet_code);
+  slice to_wallet_address = calculate_jetton_wallet_address(state_init);
+  var msg = begin_cell()
+    .store_uint(0x10, 6)
+    .store_slice(to_wallet_address)
+    .store_coins(ton_amount)
+    .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
+    .store_ref(state_init)
+    .store_ref(master_msg);
+  send_raw_message(msg.end_cell(), 3);
+}
+
+;; ------------------------------------------------------------------
+;; تابع دریافت پیام‌های داخلی (ورودی‌های توکن)
+;; ------------------------------------------------------------------
 
 () recv_internal(int msg_value, cell in_msg_full, slice in_msg_body) impure {
-    if (in_msg_body.slice_empty?()) { ;; ignore empty messages
-        return ();
+  slice in_msg_full_slice = in_msg_full.begin_parse();
+  int msg_flags = in_msg_full_slice~load_uint(4);
+  slice sender_addr = in_msg_full_slice~load_msg_addr();
+
+  ;; استخراج آدرس فرستنده
+  ;; پردازش انتقال داخلی جتون
+  if (msg_flags & 1) {
+    ;; --- اضافه شده: پردازش jetton_internal_transfer ---
+    if (in_msg_body~load_uint(32) == jetton_internal_transfer) {
+      ;; jetton_internal_transfer
+      int query_id = in_msg_body~load_uint(64);
+      int jetton_amount = in_msg_body~load_coins();
+      slice from_address = in_msg_body~load_msg_addr();
+      slice response_address = in_msg_body~load_msg_addr();
+      int forward_ton_amount = in_msg_body~load_coins();
+      cell forward_payload = in_msg_body~load_ref();
+
+      ;; در اینجا می‌توانید منطق مربوط به jetton_internal_transfer را پیاده‌سازی کنید
+      ;; برای مثال، اعتبارسنجی انتقال، ثبت رویداد، و غیره.
+      ;; در این مثال، فقط یک پیام debug برای نمایش اطلاعات انتقال داخلی چاپ می‌کنیم.
+      debug_message([
+        "Received jetton_internal_transfer",
+        "amount:", jetton_amount,
+        "from:", from_address,
+        "response_address:", response_address,
+        "forward_ton_amount:", forward_ton_amount,
+        "forward_payload:", forward_payload
+      ]);
+
+      ;; در صورت نیاز، می‌توانید پاسخ مناسب را به response_address ارسال کنید.
+      return ();
     }
-    slice cs = in_msg_full.begin_parse();
-    int flags = cs~load_uint(4);
+    ;; --- پایان بخش اضافه شده jetton_internal_transfer ---
 
-    if (flags & 1) { ;; ignore all bounced messages
-        return ();
+    in_msg_body = in_msg_body~load_ref().begin_parse();
+    if (in_msg_body~load_uint(32) != op::internal_transfer) {
+      return ();
     }
-    slice sender_address = cs~load_msg_addr();
-    cs~load_msg_addr(); ;; skip dst
-    cs~load_coins(); ;; skip value
-    cs~skip_bits(1); ;; skip extracurrency collection
-    cs~load_coins(); ;; skip ihr_fee
-    int fwd_fee = cs~load_coins(); ;; we use message fwd_fee for estimation of provide_wallet_address cost
+    in_msg_body~skip(64);
+    int jetton_amount = in_msg_body~load_coins();
 
-    int op = in_msg_body~load_uint(32);
-    int query_id = in_msg_body~load_uint(64);
+    (int total_supply, slice admin, slice next_admin, cell wallet_code, cell meta) = load_data();
 
-    (int total_supply, slice admin_address, cell content, cell jetton_wallet_code) = load_data();
+    throw_unless(1002, total_supply >= jetton_amount);
+    save_data(total_supply - jetton_amount, admin, next_admin, wallet_code, meta);
+    return ();
+  }
 
-    if (op == op::mint()) {
-        throw_unless(73, equal_slices(sender_address, admin_address));
-        slice to_address = in_msg_body~load_msg_addr();
-        int amount = in_msg_body~load_coins();
-        cell master_msg = in_msg_body~load_ref();
-        slice master_msg_cs = master_msg.begin_parse();
-        master_msg_cs~skip_bits(32 + 64); ;; op + query_id
-        int jetton_amount = master_msg_cs~load_coins();
-        mint_tokens(to_address, jetton_wallet_code, amount, master_msg);
-        save_data(total_supply + jetton_amount, admin_address, content, jetton_wallet_code);
-        return ();
+  ;; استخراج اطلاعات فرستنده و کارمزد (اگر پیام داخلی جتون نبود) - این بخش به بیرون از if منتقل شد
+  int fwd_fee = in_msg_full_slice~load_coins();
+  (int op, int query_id) = (in_msg_body~load_uint(32), in_msg_body~load_uint(64));
+  (int ts, slice admin, slice next_admin, cell w_code, cell meta) = load_data();
+
+  ;; -------------------------------
+  ;; پردازش عملیات اصلی (mint & burn)
+  ;; -------------------------------
+
+  if (op == op::mint) {
+    throw_unless(1003, sender_addr.get_msg_addr_hash() == admin.get_msg_addr_hash());
+
+    slice to = in_msg_body~load_msg_addr();
+    throw_unless(1009, to.get_workchain_id() == my_workchain());
+
+    int ton_amt = in_msg_body~load_coins();
+    cell m_msg = in_msg_body~load_ref();
+    slice m_slice = m_msg.begin_parse();
+
+    throw_unless(1004, m_slice~load_uint(32) == op::internal_transfer);
+    m_slice~skip(64);
+    int j_amt = m_slice~load_coins();
+    m_slice~skip(2 * 267);
+    int fwd_amt = m_slice~load_coins();
+
+    throw_unless(1005, ton_amt >= fwd_amt + fwd_fee);
+    send_to_jetton_wallet(to, w_code, ton_amt, m_msg, 1);
+
+    save_data(ts + j_amt, admin, next_admin, w_code, meta);
+    return ();
+  }
+
+  if (op == op::burn_notification) {
+    int j_amt = in_msg_body~load_coins();
+    slice from = in_msg_body~load_msg_addr();
+    slice expected = calculate_user_jetton_wallet_state_init(from, my_address(), w_code)
+      .begin_parse()
+      .get_msg_addr();
+
+    throw_unless(1006, expected.get_msg_addr_hash() == sender_addr.get_msg_addr_hash());
+    throw_unless(1007, ts >= j_amt);
+
+    save_data(ts - j_amt, admin, next_admin, w_code, meta);
+
+    slice resp = in_msg_body~load_msg_addr();
+
+    if (~resp.slice_empty?()) {
+      send_raw_message(
+        begin_cell()
+        .store_uint(0x10, 6)
+        .store_slice(resp)
+        .store_coins(0)
+        .store_uint(op::burn_response, 32)
+        .store_uint(query_id, 64)
+        .store_coins(j_amt)
+        .end_cell(),
+        128
+      );
     }
+    return ();
+  }
 
-    if (op == op::burn_notification()) {
-        int jetton_amount = in_msg_body~load_coins();
-        slice from_address = in_msg_body~load_msg_addr();
-        throw_unless(74,
-                equal_slices(calculate_user_jetton_wallet_address(from_address, my_address(), jetton_wallet_code), sender_address)
-        );
-        save_data(total_supply - jetton_amount, admin_address, content, jetton_wallet_code);
-        slice response_address = in_msg_body~load_msg_addr();
-        if (response_address.preload_uint(2) != 0) {
-            var msg = begin_cell()
-                    .store_uint(0x10, 6) ;; nobounce - int_msg_info$0 ihr_disabled:Bool bounce:Bool bounced:Bool src:MsgAddress -> 011000
-                    .store_slice(response_address)
-                    .store_coins(0)
-                    .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
-                    .store_uint(op::excesses(), 32)
-                    .store_uint(query_id, 64);
-            send_raw_message(msg.end_cell(), 2 + 64);
-        }
-        return ();
-    }
+  ;; -------------------------------
+  ;; پردازش عملیات مدیریتی (عملیات توسعه‌یافته)
+  ;; -------------------------------
 
-    if (op == op::provide_wallet_address()) {
-        throw_unless(75, msg_value > fwd_fee + const::provide_address_gas_consumption());
+  if (op == CHANGE_OWNER_OPCODE) {
+    slice new_admin = in_msg_body~load_msg_addr();
+    transfer_admin_rights(new_admin);
+    return ();
+  }
 
-        slice owner_address = in_msg_body~load_msg_addr();
-        int include_address? = in_msg_body~load_uint(1);
+  if (op == GET_JETTON_DATA_OPCODE) {
+    cell response = get_jetton_data();
+    send_raw_message(response, 64);
+    return ();
+  }
 
-        cell included_address = include_address?
-                ? begin_cell().store_slice(owner_address).end_cell()
-                : null();
+  if (op == GET_WALLET_ADDRESS_OPCODE) {
+    slice owner = in_msg_body~load_msg_addr();
+    slice wallet_addr = get_wallet_address(owner);
+    var resp = begin_cell()
+      .store_slice(wallet_addr)
+      .end_cell();
+    send_raw_message(resp, 64);
+    return ();
+  }
 
-        var msg = begin_cell()
-                .store_uint(0x18, 6)
-                .store_slice(sender_address)
-                .store_coins(0)
-                .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
-                .store_uint(op::take_wallet_address(), 32)
-                .store_uint(query_id, 64);
+  if (op == JETTON_NOTIFY_OPCODE) {
+    slice notify_sender = in_msg_body~load_msg_addr();
+    int notify_amount = in_msg_body~load_coins();
+    slice comment = in_msg_body~load_msg_addr();
 
-        if (is_resolvable?(owner_address)) {
-            msg = msg.store_slice(calculate_user_jetton_wallet_address(owner_address, my_address(), jetton_wallet_code));
-        } else {
-            msg = msg.store_uint(0, 2); ;; addr_none
-        }
-        send_raw_message(msg.store_maybe_ref(included_address).end_cell(), 64);
-        return ();
-    }
+    ;; در صورت نیاز، نوع داده comment را می‌توان تغییر داد
+    handle_jetton_notify(notify_sender, notify_amount, comment);
+    return ();
+  }
 
-    if (op == 3) { ;; change admin
-        throw_unless(73, equal_slices(sender_address, admin_address));
-        slice new_admin_address = in_msg_body~load_msg_addr();
-        save_data(total_supply, new_admin_address, content, jetton_wallet_code);
-        return ();
-    }
-
-    if (op == 4) { ;; change content, delete this for immutable tokens
-        throw_unless(73, equal_slices(sender_address, admin_address));
-        save_data(total_supply, admin_address, in_msg_body~load_ref(), jetton_wallet_code);
-        return ();
-    }
-
-    throw(0xffff);
+  throw(1008);
 }
 
-(int, int, slice, cell, cell) get_jetton_data() method_id {
-    (int total_supply, slice admin_address, cell content, cell jetton_wallet_code) = load_data();
-    return (total_supply, -1, admin_address, content, jetton_wallet_code);
+;; ------------------------------------------------------------------
+;; Extended Admin Functions
+;; ------------------------------------------------------------------
+
+;; انتقال حقوق مدیریتی به آدرس جدید
+() transfer_admin_rights(slice new_admin) impure {
+  (int ts, slice admin, slice next_admin, cell w_code, cell meta) = load_data();
+  throw_unless(403, equal_slices(sender(), admin));
+  admin = new_admin;
+  save_data(ts, admin, next_admin, w_code, meta);
 }
 
-slice get_wallet_address(slice owner_address) method_id {
-    (int total_supply, slice admin_address, cell content, cell jetton_wallet_code) = load_data();
-    return calculate_user_jetton_wallet_address(owner_address, my_address(), jetton_wallet_code);
-}
+;; سوزاندن توکن‌ها (کاهش total_supply)
+() burn_tokens(int amount) impure {
+  (int ts, slice admin, slice next_admin, cell w_code, cell meta) = load_data();
+  throw_unless(403, equal
