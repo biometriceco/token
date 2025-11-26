@@ -1,0 +1,12 @@
+{
+  "name": "MINI WEB",
+  "symbol": "WEB",
+  "description": "MINI WEB Adalah Token Utilitas Dari Platform Resmi Mini Web, Tempat Pengguna Mendapatkan $WEB Secara Gratis Melalui Mining, Reward, Staking, Game, Dan Aktivitas Lain Di Telegram.",
+  "decimals": 9,
+  "image": "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjM_TmQMRd5UTvXVh9qE9yzbA9CTDqVqier8WiZjk0U9ceoLjUwd52wco5SXfbyselZY2dBLPsnxTI6UFSfutI45_T8E7td_jEDGo2Ocgd9HFNnc80B5M0d9JA3K6Gk-p75oztHs1f6BitkYiMj6fLHpkVAjrtUEam2La8QSKF9d7Net0S2ZB6vuCXTtw/s320/1000029182.png",
+  "socials": {
+    "website": "https://miniweb.sbs",
+    "telegram_bot": "https://t.me/miniweb3_bot"
+  },
+  "metadata_version": "2.0"
+}
