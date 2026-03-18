@@ -1,6 +1,6 @@
 {
-  "name": "@ton-defi.org/jetton-deployer-contracts",
-  "description": "Javascript library for deploying Jettons on the TON blockchain",
+  "name": "trither-reboon-token",
+  "description": "Trither Reboon (USDT.R) Jetton Token",
   "version": "0.0.2",
   "license": "MIT",
   "author": "ton-defi.org",
