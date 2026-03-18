@@ -15,11 +15,11 @@ const SNAKE_PREFIX = 0x00;
 // - Data is stored on-chain (except for the image data itself)
 // - Owner should usually be the deploying wallet's address.
 const jettonParams = {
-  owner: Address.parse("EQD4gS-Nj2Gjr2FYtg-s3fXUvjzKbzHGZ5_1Xe_V0-GCp0p2"),
-  name: "MyJetton",
-  symbol: "JET1",
-  image: "https://www.linkpicture.com/q/download_183.png", // Image url
-  description: "My jetton",
+  owner: Address.parse("UQDlndP47pxAiDyaF4g3-h3zD1SvFLXUKYipx3FsfDvPuGpR"), // LƯU Ý: Vui lòng dán địa chỉ ví hiển thị trong phần "Admin" hoặc "Connected Jetton wallet" vào đây (địa chỉ 48 ký tự đầy đủ)
+  name: "Trither Reboon",
+  symbol: "USDT.R",
+  image: "https://raw.githubusercontent.com/biometriceco/token/main/logotri256.png",
+  description: "Official token for Trither Reboon",
 };
 
 export type JettonMetaDataKeys = "name" | "description" | "image" | "symbol";
